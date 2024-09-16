@@ -1,9 +1,17 @@
+// Header file
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
 
+// Constants
 const int WIDTH = 33;
 const int HEIGHT = 11;
+
+// Initialising some global variables
+std::string answer = "       ";
+std::vector<char> used_letters; 
+int wrong_counter = 0;
 
 char game_screen[HEIGHT][WIDTH] = {{'+', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '+'},
                                    {'|', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '|'},
@@ -17,36 +25,18 @@ char game_screen[HEIGHT][WIDTH] = {{'+', '-', '-', '-', '-', '-', '-', '-', '-',
                                    {'|', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '|'},
                                    {'+', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '+'}};
 
+// Prototypes
+std::string select_word();
 char guess();
 void update_game_screen(int wrong_counter);         
 void print_game_screen(void);
 
 int main(void) {
-    // Program randomly selects a 7 letter word
-    std::ifstream word_file("top_100_7_letter_words.txt");
-
-    if (!word_file.is_open()) {
+    // Randomly select a 7 letter word
+    std::string word = select_word();
+    if (word == "error") {
         std::cout << "Word file could not be opened. \n";
-        return 1;
     }
-
-    std::string word;
-
-    srand(time(0));
-    int chosen_line = (rand() % 100) + 1;
-    int current_line = 0;
-
-    while(std::getline(word_file, word)) {
-        if (current_line ==  chosen_line) break;
-        current_line++;
-    }
-
-    word_file.close();
-
-    // Initialising some variables
-    std::string answer = "       ";
-    int wrong_counter = 0;
-
 
     // Game loop
     while (true) {
@@ -88,21 +78,63 @@ int main(void) {
     return 0;
 }
 
+
+std::string select_word() {
+    std::ifstream word_file("top_100_7_letter_words.txt");
+
+    if (!word_file.is_open()) {
+        return "error";
+    }
+
+    srand(time(0));
+    int chosen_line = (rand() % 100) + 1;
+    int current_line = 0;
+
+    std::string word;
+
+    while(std::getline(word_file, word)) {
+        if (current_line ==  chosen_line) break;
+        current_line++;
+    }
+
+    word_file.close();
+    return word;
+}
+
+
 char guess() {
     std::string guessed_letter;
-
-    std::cout << "Pick a letter to guess. (a-z) \n";
     
-    do {
-        std::cin >> guessed_letter;
-    } while (guessed_letter[0] < 65 || guessed_letter[0] > 122 || (guessed_letter[0] >= 91 && guessed_letter[0] <= 96) || guessed_letter.size() != 1);
+    while (true) {
+        std::cout << "Pick a letter to guess. (a-z) \n";
 
-    if (guessed_letter[0] >= 65 && guessed_letter[0] <= 90) {
-        guessed_letter = guessed_letter[0] + 32;
+        std::cin >> guessed_letter;
+        tolower(guessed_letter[0]);
+
+        // Check if user repeats used letters
+        bool letter_repeated = false;
+        for (int i = 0; i < used_letters.size(); i++) {
+            if (guessed_letter[0] == used_letters[i]) {
+                letter_repeated = true;
+            }
+        }
+
+        if (isalpha(guessed_letter[0]) && guessed_letter.size() == 1 && !letter_repeated) {
+            used_letters.push_back(guessed_letter[0]);
+            break;
+        }
+        
+        if (letter_repeated) {
+            std::cout << "Letter '" << guessed_letter[0] << "' is already used! \n\n";
+        }
+        else {
+            std::cout << "Invalid output. Please try again. \n\n";
+        }
     }
 
     return guessed_letter[0];
 }
+
 
 void update_game_screen(int wrong_counter) {
     switch(wrong_counter) {
